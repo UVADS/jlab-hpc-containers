@@ -1,0 +1,114 @@
+#!/bin/bash
+# JKRollout - Jupyter kernel roll-out
+#
+# Ruoshi Sun
+# 2023-12-19 singularity -> apptainer
+# 2020-07-05
+
+if [[ $# -ne 2 && $# -ne 3 ]]; then
+    echo "Usage: `basename $0` sif display_name [gpu]"
+    echo "    sif          = file name of *.sif"
+    echo "    display_name = name of Jupyter kernel"
+    echo "    gpu          = enable gpu (default: false)"
+    exit 1
+fi
+
+# parse input
+SIFPATH=$(realpath $1)
+DISPLAYNAME=$2
+[ $# -eq 3 ] && GPU=true || GPU=false
+
+# constants
+#SINGULARITY_VERSION=3.7.1
+KERNEL=$HOME/.local/share/jupyter/kernels
+SIF=$(basename $(echo $SIFPATH))
+DIR=$KERNEL/${SIF/.sif/}
+JSON=kernel.json
+INIT=init.sh
+
+function print_stage {
+    echo -e "\033[1;34m==> $1\033[0m"
+}
+
+# verify $SIF exists and $DISPLAYNAME is nonempty
+print_stage "Checking inputs"
+if ! ls $SIFPATH &> /dev/null; then
+    echo "Error: $SIFPATH not found"
+    exit 1
+fi
+
+if [ -z "$DISPLAYNAME" ]; then
+    echo "Error: empty display_name"
+    exit 1
+fi
+
+# check if $SIF contains /bin/sh
+module purge
+ml apptainer
+print_stage "Inspecting $SIF"
+apptainer inspect $SIFPATH 2>/dev/null
+if [ $? -eq 255 ]; then
+    echo "Container may not have /bin/sh. Use singularity 3.6+."
+fi
+
+# check if $SIF contains kernel package
+print_stage "Checking $SIF for ipykernel"
+apptainer exec $SIFPATH python -c "import ipykernel" &> /dev/null
+if [ $? -ne 0 ]; then
+    LOCAL_PATH=${HOME}/local/${SIF/.sif/}
+    BIND_PATH="--bind $LOCAL_PATH:$HOME/.local"
+    echo "Warning: $SIF does not contain ipykernel"
+    mkdir -p $LOCAL_PATH
+    echo "Installing ipykernel in $LOCAL_PATH for dynamic mount"
+    apptainer exec $BIND_PATH $SIFPATH python -m pip install --user ipykernel
+fi 
+
+# kernel directory
+print_stage "Checking kernel directory"
+
+if [ -d $DIR ]; then
+    read -p "$DIR already exists. Overwrite? [y/N]" yn
+    if [[ ! $yn =~ ^[Yy]$ ]]; then
+        echo "No changes made"
+        exit 0
+    fi
+else
+    print_stage "Creating kernel directory $DIR"
+    mkdir -p $DIR
+fi
+
+# write kernel files
+print_stage "Writing kernel files"
+cat > $DIR/$JSON <<EOF
+{
+ "argv": [
+  "$DIR/$INIT",
+  "-f",
+  "{connection_file}"
+ ],
+ "display_name": "$DISPLAYNAME",
+ "language": "python"
+}
+EOF
+
+if [ "$GPU" = true ]; then
+    EXEC="apptainer exec --nv $BIND_PATH $SIFPATH python -m ipykernel \$@"
+else
+    EXEC="apptainer exec $BIND_PATH $SIFPATH python -m ipykernel \$@"
+fi
+
+cat > $DIR/$INIT <<EOF
+#!/bin/bash
+ml apptainer
+$EXEC
+EOF
+
+chmod +x $DIR/$INIT
+
+echo
+echo -n "Done! "
+if command -v xxd &> /dev/null; then
+    echo "0000000: f09f 8e89 0a" | xxd -r
+else
+    echo
+fi
