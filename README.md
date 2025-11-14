@@ -137,29 +137,6 @@ If installed, the ipykernel package will return an output with the version numbe
 9.6.0
 ```
 
-If it is not installed, we'll augment the Python environment using these commands:
-```bash
-mkdir -p ~/local/pytorch-2.9.1
-apptainer exec --bind $HOME/local/pytorch-2.9.1:$HOME/.local pytorch-2.9.1.sif python -m pip install --user ipykernel
-```
-
-The first line sets up a new directory in home. This will be the destination where the ipykernel package will be installed. You can change the name, just make it unique for each container image.
-
-The second line installs the ipykernel package.
-
-> **Notes:** 
-> 
-> - The `--bind $HOME/local/pytorch-2.9.1:$HOME/.local` argument will mount the new `$HOME/local/pytorch-2.9.1` directory on the host filesystem and make it available as `$HOME/.local` inside the container instance. 
-> 
-> - We choose `$HOME/.local` because that's where Python looks for additional packages by default, and that's also the destination for `pip install --user`.
-
-Let's confirm that ipykernel is now available from within the container.
-```bash
-apptainer exec --bind $HOME/local/pytorch-2.9.1:$HOME/.local pytorch-2.9.1.sif python -m ipykernel -V
-```
-
-Note that we have to include the `--bind $HOME/local/pytorch-2.9.1:$HOME/.local` argument in order for this to work.
-
 ### 3. Creating a New Kernel Spec File
 
 In addition to the ipykernel package inside your environment (i.e. inside your container) we need to tell JupyterLab how to launch the kernel environment. These instructions are provided in the kernel spec file that needs to be present on the host system.
@@ -178,6 +155,7 @@ On UVA's HPC system you can run the `jkrollout` command to create a new JupyterL
 
 Run this command:
 ```bash
+cd ~/jlab-hpc-containers
 bash jkrollout2 ~/pytorch-2.9.1.sif "PyTorch 2.9.1" gpu
 ```
 This will create the kernel specifications for the PyTorch container image in `~/.local/share/jupyter/kernels/pytorch-2.9.1`.
@@ -190,6 +168,30 @@ In addition, you will have `~/local/pytorch-2.9.1` where the ipykernel was insta
 Skip to step 4.
 
 #### 3b. Option B: Manual Setup
+
+If `ipykernel` is not provided by the container image, we'll augment the Python environment using the following steps:
+
+```bash
+mkdir -p ~/local/pytorch-2.9.1
+apptainer exec --bind $HOME/local/pytorch-2.9.1:$HOME/.local ~/pytorch-2.9.1.sif python -m pip install --user ipykernel
+```
+
+The first line sets up a new directory in home. This will be the destination where the ipykernel package will be installed. You can change the name, just make it unique for each container image.
+
+The second line installs the ipykernel package.
+
+> **Notes:** 
+> 
+> - The `--bind $HOME/local/pytorch-2.9.1:$HOME/.local` argument will mount the new `$HOME/local/pytorch-2.9.1` directory on the host filesystem and make it available as `$HOME/.local` inside the container instance. 
+> 
+> - We choose `$HOME/.local` because that's where Python looks for additional packages by default, and that's also the destination for `pip install --user`.
+
+Let's confirm that ipykernel is now available from within the container.
+```bash
+apptainer exec --bind $HOME/local/pytorch-2.9.1:$HOME/.local ~/pytorch-2.9.1.sif python -m ipykernel -V
+```
+
+Note that we have to include the `--bind $HOME/local/pytorch-2.9.1:$HOME/.local` argument in order for this to work.
 
 If the jkrollout/jkrollout2 command is not available, you can create the kernel manually following these steps:
 
