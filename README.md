@@ -81,6 +81,7 @@ Docker requires root-level daemon access, which is typically restricted in HPC e
 </div>
 </div>
 
+
 These frameworks are <a href="https://opencontainers.org/">OCI (Open Container Initiative)</a> compatible and can wrap around Docker images at runtime, allowing you to use existing Docker images without modification. This compatibility means you can develop containers using Docker on your local machine and then run them on HPC systems using these user-space frameworks. These frameworks allow users to run containers in HPC environments without requiring administrative privileges, making them suitable for shared computing resources.
 
 **Relevant for Parallel Computing and DL/ML Workloads:**
@@ -137,9 +138,11 @@ If installed, the ipykernel package will return an output with the version numbe
 9.6.0
 ```
 
+In the case of this PyTorch image the ipykernel package is missing. We will fix that in the next steps.
+
 ### 3. Creating a New Kernel Spec File
 
-In addition to the ipykernel package inside your environment (i.e. inside your container) we need to tell JupyterLab how to launch the kernel environment. These instructions are provided in the kernel spec file that needs to be present on the host system.
+In addition to the `ipykernel` package inside your environment (i.e. inside your container) we need to tell JupyterLab how to launch the kernel environment. These instructions are provided in the **kernel spec** file that needs to be present on the host system.
 
 JupyterLab searches for kernels in the following order:
 
@@ -163,13 +166,13 @@ This will create the kernel specifications for the PyTorch container image in `~
 -  `kernel.json`
 -  `init.sh`
 
-In addition, you will have `~/local/pytorch-2.9.1` where the ipykernel was installed (on the host filesystem, not the container image) which will be dynamically mounted when the Jupyter kernel for PyTorch 2.9.1 is launched.
+In addition, you will have the `ipykernel` package installed in `~/local/pytorch-2.9.1`. Note that it is installed (on the host filesystem, not the container image) which will be dynamically mounted when the Jupyter kernel for PyTorch 2.9.1 is launched.
 
 Skip to step 4.
 
 #### 3b. Option B: Manual Setup
 
-If `ipykernel` is not provided by the container image, we'll augment the Python environment using the following steps:
+If you don't have access to the jkrollout script, you can create the kernel manually using the following steps:
 
 ```bash
 mkdir -p ~/local/pytorch-2.9.1
@@ -193,9 +196,7 @@ apptainer exec --bind $HOME/local/pytorch-2.9.1:$HOME/.local ~/pytorch-2.9.1.sif
 
 Note that we have to include the `--bind $HOME/local/pytorch-2.9.1:$HOME/.local` argument in order for this to work.
 
-If the jkrollout/jkrollout2 command is not available, you can create the kernel manually following these steps:
-
-First we'll set up a new directory inside our home directory.
+Next we'll manually create the kernel following these steps:
 
 ```bash
 KERNEL_DIR="~/.local/share/jupyter/kernels/pytorch-2.9.1"
@@ -203,7 +204,7 @@ mkdir -p $KERNEL_DIR
 cd $KERNEL_DIR
 ```
 
-Inside this directory we will set up two files, `kernel.json` and `init.sh`. The kernel spec file `kernel.json` is in JSON format and defines the launch command, display name, and display icon in JupyterLab. 
+Inside this new directory we will set up two files, `kernel.json` and `init.sh`. The kernel spec file `kernel.json` is in JSON format and defines the launch command, display name, and display icon in JupyterLab. 
 
 **kernel.json:**
 ```json
