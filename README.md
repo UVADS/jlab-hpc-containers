@@ -1,6 +1,6 @@
 # Containers for Interactive JupyterLab and Batch Computing in HPC Environments
 
-This tutorial explores how containers can provide consistent environments for interactive JupyterLab sessions and non-interactive batch computing, enabling seamless workflows from development to production in HPC environment. The examples are tailored toward use in UVA's HPC environment although the concepts apply generally.
+This tutorial explores how containers can provide consistent environments for interactive JupyterLab sessions and non-interactive batch computing, enabling seamless workflows from development to production in HPC environments. The examples are tailored toward use in UVA's HPC environment although the concepts apply generally.
 
 _To follow along you should_
 
@@ -11,6 +11,15 @@ _To follow along you should_
 
 > **Note:** It is assumed that you have access to an HPC system. HPC access and user accounts are typically tied to an **allocation**, which is a grant of compute resources that allows you to submit and run jobs on the HPC cluster. At UVA, faculty can request allocations through the [Research Computing](https://www.rc.virginia.edu/userinfo/hpc/). Postdocs, staff and students can be sponsored through a faculty allocation.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Containers in HPC Environments](#containers-in-hpc-environments)
+- [Interactive JupyterLab Sessions on an HPC System](#interactive-jupyterlab-sessions-on-an-hpc-system)
+- [Running a non-interactive Job](#running-a-non-interactive-job)
+- [From Development to Production Environment](#from-development-to-production-environment)
+- [References](#references)
+
 ## Overview
 
 Containers package application code/executables and all their dependencies needed to run them. They provide lightweight operating system-level virtualization (as opposed to hardware virtualization provided by virtual machines) and offer portability of applications across different environments. Several container projects are specifically targeted at HPC environments, addressing the unique requirements of high-performance computing systems.
@@ -20,7 +29,7 @@ When working with code it is helpful to distinguish *interactive* vs *batch (non
 | | Development | Production |
 | --- | --- | --- |
 | **Interactive** | Prototyping (e.g. Jupyter notebooks, RStudio) | Data exploration and live analysis (e.g. Jupyter notebooks, RStudio) |
-| **Batch** | Testing scripts and analysis at small scale (e.g. scheduled jobs) | full scale analysis (e.g., scheduled jobs) |
+| **Batch** | Testing scripts and analysis at small scale (e.g. scheduled jobs) | Full scale analysis (e.g., scheduled jobs) |
 
 **Development Phase**
 
@@ -98,27 +107,29 @@ Let's say we want to train an image classifier with PyTorch. DockerHub has a ric
 
 ```bash
 cd  # go to your home directory
+git clone https://github.com/UVADS/jlab-hpc-containers.git
+
 module load apptainer
-apptainer pull pytorch-2.9.1.sif docker://pytorch/pytorch:2.9.1-cuda12.6-cudnn9-runtime
+apptainer pull ~/pytorch-2.9.1.sif docker://pytorch/pytorch:2.9.1-cuda12.6-cudnn9-runtime
 ```
 
 This will download the PyTorch Docker image and convert it into an Apptainer image file `pytorch-2.9.1.sif` in your current directory (in this case your home directory on the HPC system). The `pytorch-2.9.1.sif` file is self-contained and you can move it around like any other file.
 
 Let's check the Python version.
 ```bash
-apptainer exec pytorch-2.9.1.sif python -V
+apptainer exec ~/pytorch-2.9.1.sif python -V
 ```
 
 And the PyTorch version:
 ```bash
-apptainer exec pytorch-2.9.1.sif python -c "import torch; print (torch.__version__)"
+apptainer exec ~/pytorch-2.9.1.sif python -c "import torch; print (torch.__version__)"
 ```
 
 ### 2. The ipykernel Package
 
 In order for JupyterLab to detect and run your Python environment as a kernel you need to have the `ipykernel` package installed. Let's run this command to check:
 ```bash
-apptainer exec pytorch-2.9.1.sif python -m ipykernel -V
+apptainer exec ~/pytorch-2.9.1.sif python -m ipykernel -V
 ```
 
 If installed, the ipykernel package will return an output with the version number, e.g.
@@ -128,8 +139,8 @@ If installed, the ipykernel package will return an output with the version numbe
 
 If it is not installed, we'll augment the Python environment using these commands:
 ```bash
-mkdir -p $HOME/local/pytorch-2.9.1
-apptainer exec -bind $HOME/local/pytorch-2.9.1:$HOME/.local pytorch-2.9.1.sif python -m pip install --user ipykernel
+mkdir -p ~/local/pytorch-2.9.1
+apptainer exec --bind $HOME/local/pytorch-2.9.1:$HOME/.local pytorch-2.9.1.sif python -m pip install --user ipykernel
 ```
 
 The first line sets up a new directory in home. This will be the destination where the ipykernel package will be installed. You can change the name, just make it unique for each container image.
@@ -138,7 +149,7 @@ The second line installs the ipykernel package.
 
 > **Notes:** 
 > 
-> - The `-bind $HOME/local/pytorch-2.9.1:$HOME/.local` argument will mount the new `$HOME/local/pytorch-2.9.1` directory on the host filesystem and make it available as `$HOME/.local` inside the container instance. 
+> - The `--bind $HOME/local/pytorch-2.9.1:$HOME/.local` argument will mount the new `$HOME/local/pytorch-2.9.1` directory on the host filesystem and make it available as `$HOME/.local` inside the container instance. 
 > 
 > - We choose `$HOME/.local` because that's where Python looks for additional packages by default, and that's also the destination for `pip install --user`.
 
@@ -161,21 +172,26 @@ JupyterLab searches for kernels in the following order:
 
 User-level kernels take precedence over system-wide kernels, allowing you to customize your kernel selection without affecting other users. When creating custom kernels, they are typically placed in `~/.local/share/jupyter/kernels`.
 
-#### 3a. Option A: jkrollout
+#### 3a. Option A: jkrollout2
 
-On UVA's HPC system you can run the `jkrollout` command to create a new JupyterLab kernel that is backed by a container image (courtesy Ruoshi Sun, UVA Research Computing).
+On UVA's HPC system you can run the `jkrollout` command to create a new JupyterLab kernel that is backed by a container image (courtesy Ruoshi Sun, UVA Research Computing). We provide an augmented version, `jkrollout2`, in this repo.
 
 Run this command:
 ```bash
-jkrollout ~/pytorch-2.9.1.sif "PyTorch 2.9.1" gpu
+bash jkrollout2 ~/pytorch-2.9.1.sif "PyTorch 2.9.1" gpu
 ```
-This will create the kernel specifications for our PyTorch container image in `~/.local/share/jupyter/kernels/pytorch-2.9.1`.
+This will create the kernel specifications for the PyTorch container image in `~/.local/share/jupyter/kernels/pytorch-2.9.1`.
+
+-  `kernel.json`
+-  `init.sh`
+
+In addition, you will have `~/local/pytorch-2.9.1` where the ipykernel was installed (on the host filesystem, not the container image) which will be dynamically mounted when the Jupyter kernel for PyTorch 2.9.1 is launched.
 
 Skip to step 4.
 
 #### 3b. Option B: Manual Setup
 
-If the jkrollout command is not available, you can create the kernel manually following these steps:
+If the jkrollout/jkrollout2 command is not available, you can create the kernel manually following these steps:
 
 First we'll set up a new directory inside our home directory.
 
@@ -221,7 +237,7 @@ nvidia-modprobe -u -c=0
 
 module purge
 module load apptainer
-apptainer exec --nv --bind /home/mst3k/local/pytorch-2.9.1:$HOME/.local /home/mst3k/pytorch-2.9.1.sif python -m ipykernel $@
+apptainer exec --nv --bind $HOME/local/pytorch-2.9.1:$HOME/.local $HOME/pytorch-2.9.1.sif python -m ipykernel $@
 ```
 
 We need to make the `init.sh` script executable.
@@ -286,6 +302,9 @@ In order to run our Python script on the HPC system we need to write a shell scr
 #SBATCH --cpus-per-task=4
 #SBATCH --time=00:10:00                 # 10 minutes
 
+# get example Py script
+curl -o pytorch-example.py https://raw.githubusercontent.com/pytorch/examples/refs/heads/main/mnist/main.py
+
 module purge
 module load apptainer
 apptainer exec --nv --bind ~/local/pytorch-2.9.1:$HOME/.local ~/pytorch-2.9.1.sif python pytorch-example.py
@@ -297,7 +316,7 @@ To avoid cluttering our home directory we'll change into a `jobrun` directory in
 ```bash
 mkdir -p /scratch/$USER/jobrun      # create new directory in scratch
 cd /scratch/$USER/jobrun            # change into that new directory
-sbatch ~/pytorch-example.sh         # submit the job script
+sbatch ~/jlab-hpc-containers/pytorch-example.sh         # submit the job script
 ```
 
 We can track status of the submitted job by running the `sacct` command. The job will create a directory `/scratch/$USER/data` where the MNIST dataset will be downloaded to. 
