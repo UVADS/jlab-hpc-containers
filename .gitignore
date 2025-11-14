@@ -1,2 +1,7 @@
 README.html
 README_files
+.ipynb_checkpoints/  
+/data
+*.err
+*.log
+*.out
