@@ -13,4 +13,5 @@ curl -o pytorch-example.py https://raw.githubusercontent.com/pytorch/examples/re
 
 module purge
 module load apptainer
+
 apptainer exec --nv --bind ~/local/pytorch-2.9.1:$HOME/.local ~/pytorch-2.9.1.sif python pytorch-example.py
