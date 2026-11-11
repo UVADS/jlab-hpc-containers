@@ -100,7 +100,7 @@ In the following steps, we will explore how to define your own kernels backed by
 
 ### 0. Login to the HPC System
 
-It is assumed that you have an account and allocation on an HPC system. Log in to terminal on the HPC login node. On UVA's HPC system you can also open a terminal session in your web browser via the Open OnDemand portal. See [UVA HPC login options](https://www.rc.virginia.edu/userinfo/hpc/login/).
+It is assumed that you have an account and allocation on an HPC system. Log in to terminal on the HPC login node. On UVA's HPC system you can also open a terminal session in your web browser via the Open OnDemand portal. See [UVA HPC login options](https://www.archive.rc.virginia.edu/userinfo/hpc/login/).
 
 ### 1. Get the Container Image
 
@@ -262,7 +262,7 @@ chmod +x init.sh
 
 ### 4. Launching the New Kernel
 
-When you now launch JupyterLab, you should see the new `PyTorch 2.9.1` kernel as a new tile in the **Launcher** user interface. On UVA's HPC system you can start [JupyterLab via Open OnDemand](https://www.rc.virginia.edu/userinfo/hpc/software/jupyterlab/).
+When you now launch JupyterLab, you should see the new `PyTorch 2.9.1` kernel as a new tile in the **Launcher** user interface. On UVA's HPC system you can start [JupyterLab via Open OnDemand](https://archive.rc.virginia.edu/userinfo/hpc/software/jupyterlab/).
 
 It should look similar to this.
 
@@ -276,7 +276,7 @@ For this tutorial we will use a [pytorch-example.ipynb](pytorch-example.ipynb) n
 
 ### 0. Login to the HPC System
 
-It is assumed that you have an account and allocation on an HPC system. Log in to terminal on the HPC login node. On UVA's HPC system you can also open a terminal session in your web browser via the Open OnDemand portal. See [UVA HPC login options](https://www.rc.virginia.edu/userinfo/hpc/login/).
+It is assumed that you have an account and allocation on an HPC system. Log in to terminal on the HPC login node. On UVA's HPC system you can also open a terminal session in your web browser via the Open OnDemand portal. See [UVA HPC login options](https://www.archive.rc.virginia.edu/userinfo/hpc/login/).
 
 ### 1. Get the Container Image
 
@@ -293,7 +293,7 @@ curl -o pytorch-example.py https://raw.githubusercontent.com/pytorch/examples/re
 
 ### 3. The Job Script
 
-In order to run our Python script on the HPC system we need to write a shell script that specifies the hardware resources and max time limit for the job. On UVA's HPC system job scheduling and resource allocation is handled by [Slurm](https://www.rc.virginia.edu/userinfo/hpc/slurm/). The Slurm resource directives start with `#SBATCH`.
+In order to run our Python script on the HPC system we need to write a shell script that specifies the hardware resources and max time limit for the job. On UVA's HPC system job scheduling and resource allocation is handled by [Slurm](https://www.archive.rc.virginia.edu/userinfo/hpc/slurm/). The Slurm resource directives start with `#SBATCH`.
 
 **pytorch-example.sh:**
 ```bash
